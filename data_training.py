@@ -13,9 +13,7 @@ from tensorflow.keras.callbacks import TensorBoard
 
 TRAIN_MODEL = True
 DATA_PATH = Path('DB')
-# կան ՝ ես, դու, իմ, քո, անուն, ազգանուն, ի՞նչ, է, և, Բարև Ձեզ, ա, ս, ո, ն
 
-# , 'շնորհակալություն', 'որովհետև', 'նա', 'նրա',
 #                     'Երևան', 'Հայաստան', 'լավ', 'վատ', 'հայերեն', 'մենք', 'սիրել', 'հիշել', 'մոռանալ', 'Ցտեսություն', 'ե՞րբ', 'ինչու՞', 'լսել', 'ժեստերի լեզու'
 actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ',
                     'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'ցտեսություն',
@@ -25,26 +23,9 @@ sequence_length = 30
 
 label_map = {str(label): num for num, label in enumerate(actions)}
 print(label_map)
-#sequence - features (X)
-#labels - outputs (y)
 sequences, labels = [], []
 
 print("Data retrieval started")
-
-# for action in actions:
-#     action_path = DATA_PATH / action
-#     for sequence in range(1, no_sequences + 1):
-#         window = [] #the frames
-#         sequence_path = action_path / action
-#
-#         for frame_num in range(sequence_length):
-#             frame_path = f"{sequence_path}_{str(sequence)}.npy"
-#
-#             res = np.load(frame_path, allow_pickle=False)
-#             window.append(res)
-#
-#         sequences.append(window)
-#         labels.append(label_map[action])
 
 for action in actions:
     action_path = DATA_PATH / action
@@ -57,9 +38,6 @@ for action in actions:
         labels.append(label_map[action])
 
 print("Data successfully loaded")
-
-# print(np.array(sequences).shape)
-# print(np.array(labels).shape)
 
 X = np.array(sequences)
 print("X.shape:", X.shape)
@@ -92,10 +70,14 @@ model.add(Dense(actions.shape[0], activation='softmax'))
 
 if TRAIN_MODEL:
     model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-    model.fit(X_train, y_train, epochs=1900, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
+    model.fit(X_train, y_train, epochs=160, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
     model.summary()
     model.evaluate(X_test, y_test)
-    model.save('model9.h5')
+    model.save('model12.h5')
+    #model12: 160, 256, problems with surname, is, vo, yes, sign lang, we, n, and
+    #model11: 160 epochs, 128, name, surname, is,
+    #model10: 190 epochs, LSTM 256, bad at անուն, ազգանուն, է
+    #model9: okay 190 epochs, LSTM 256, bad at ա, և, լավ, ցտեսություն, ժեստերի լեզու
     #model8: okayish, epochs 165, LSTM 256, bad at Ս, ա, դ, և, ն
     #model7: epochs 125, LSTM 128
     #model5: not bad asem qez
@@ -104,8 +86,7 @@ if TRAIN_MODEL:
     #model.save('armenian_sign_model.h5')
 else:
     from tensorflow.keras.models import load_model
-    #model = load_model('armenian_sign_model.h5')
-    model = load_model('model5.h5')
+    model = load_model('model9.h5')
     print("Model loaded successfully")
 
 
@@ -129,9 +110,6 @@ print("confusion matrix:", confusion_matrix)
 accuracy = accuracy_score(ytrue, yhat)
 print("accuracy:", accuracy)
 
-
-#11 real testing
-# Detection variables
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
@@ -161,11 +139,8 @@ def show_landmarks(image, results):
 
 
 def collect_landmarks(results):
-    #pose landmarks
     pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(132)
-    #left hand landmarks
     lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(63)
-    #right hand landmarks
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(63)
 
     return np.concatenate([pose, lh, rh])
@@ -235,15 +210,6 @@ with mp_holistic.Holistic(model_complexity=1, min_detection_confidence=0.5, min_
 
         if len(sequence) == 30:
             res = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
-            # print(res)
-            # print(actions[np.argmax(res)])
-
-            # if res[np.argmax(res)] > threshold:
-            #     if len(sentence) > 0:
-            #         if actions[np.argmax(res)] != sentence[-1]:
-            #             sentence.append(actions[np.argmax(res)])
-            #     else:
-            #         sentence.append(actions[np.argmax(res)])
 
             current_time = time.time()
             if res[np.argmax(res)] > threshold and (current_time - last_prediction_time) > COOLDOWN_SECONDS:
@@ -253,12 +219,6 @@ with mp_holistic.Holistic(model_complexity=1, min_detection_confidence=0.5, min_
 
             if len(sentence) > 5:
                 sentence = sentence[-5:]
-
-
-
-        # cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        # cv2.putText(image, ' '.join(sentence), (3, 30),
-        #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         display_text = ' '.join([latin_map.get(s, s) for s in sentence])
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
