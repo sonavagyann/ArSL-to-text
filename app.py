@@ -51,7 +51,6 @@ armenian_display_map = {
 
 english_verb_map = {
     'սիրել': 'love',
-    # add other verbs
 }
 
 verb_conjugations = {
@@ -69,16 +68,7 @@ verb_conjugations = {
     }
 }
 
-#model = load_model('armenian_sign_model.h5')
-model = load_model('model9.h5')
-# model = Sequential([
-#     LSTM(64, return_sequences=True,  activation='relu', input_shape=(30, 258)),
-#     LSTM(128, return_sequences=True, activation='relu'),
-#     LSTM(64, return_sequences=False, activation='relu'),
-#     Dense(64, activation='relu'),
-#     Dense(32, activation='relu'),
-#     Dense(len(actions), activation='softmax'),
-# ])
+model = load_model('model12.h5')
 
 mp_holistic = mp.solutions.holistic
 mp_drawing  = mp.solutions.drawing_utils
@@ -120,11 +110,11 @@ state = {
     'prediction_counter': {}
 }
 
-strict_signs = ['իմ', 'սիրել', 'Ողջույն', 'ազգանուն', 'ս', 'ո', 'վ', 'շնորհակալություն', 'է', 'գ', 'ի՞նչ ']
+strict_signs = ['սիրել', 'այո', 'ժեստերի լեզու']
 
 THRESHOLD = 0.75
-COOLDOWN_SECONDS = 3
-STRICT_THRESHOLD = 0.85
+COOLDOWN_SECONDS = 5
+STRICT_THRESHOLD = 0.9
 
 def gen_frames():
     sequence = []
@@ -152,6 +142,7 @@ def gen_frames():
             sequence[:] = sequence[-30:]
 
             person_detected = results.pose_landmarks is not None or results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
+            #person_detected = results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
 
             if not person_detected:
                 state['all_probs'] = [0.0] * len(actions)
@@ -236,13 +227,6 @@ def get_state():
 
 def apply_grammar(sentence):
     result = []
-    # for i, word in enumerate(sentence):
-    #     if word in verb_conjugations and i > 0:
-    #         prev_word = sentence[i - 1]
-    #         conjugated = verb_conjugations[word].get(prev_word, word)
-    #         result.append(conjugated)
-    #     else:
-    #         result.append(word)
 
     for i, word in enumerate(sentence):
         if word in verb_conjugations and i > 0:
