@@ -20,6 +20,7 @@ while True:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb_frame)
 
+
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             #to print the coordinates of the landmarks
