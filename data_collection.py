@@ -7,8 +7,10 @@ from pathlib import Path
 # 200 samples: ես, դու, իմ, քո, անուն, ազգանուն, ի՞նչ, է, և,
 # ա, ս, ո, ն, ցտեսություն, վ, դ, գ, յ, ր
 # նա, նրա, մենք, սիրել, լսել, ժեստերի լեզու, շնորհակալություն, այո, վատ, լավ
-# next in line: ե, ներողություն, ապրել, հիշել,
-CURRENT_ACTION = 'լավ'
+# next in line: ե, ներողություն, ապրել, հիշել, ու
+#rerecorded:Ցտեսություն, ս, ա
+#next in line: ն, դ, և
+CURRENT_ACTION = 'ա'
 DATA_PATH = Path('DB')
 no_sequences = 200
 sequence_length = 30
@@ -28,7 +30,6 @@ def mediapipe_detection(image, model):
     return image, results
 
 
-#shows the pose, and hands landmarks
 def show_landmarks(image, results):
     mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS,
                               mp_drawing.DrawingSpec(color=(3, 0, 46), thickness=2, circle_radius=4),
@@ -46,14 +47,9 @@ def show_landmarks(image, results):
                               )#orange
 
 
-
-#collects the pose, left and right hand landmarks for each sign
 def collect_landmarks(results):
-    #pose landmarks
     pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(132)
-    #left hand landmarks
     lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(63)
-    #right hand landmarks
     rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(63)
 
     return np.concatenate([pose, lh, rh])
@@ -62,27 +58,9 @@ def collect_landmarks(results):
 
 action_folder = DATA_PATH / CURRENT_ACTION
 action_folder.mkdir(parents=True, exist_ok=True)
-#2 for better accuracy, 1 for better speed
 with mp_holistic.Holistic(model_complexity=1, min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-    # while True:
-    #     success, frame = cap.read()
-    #     if not success:
-    #         break
-    #
-    #     frame = cv2.flip(frame, 1)
-    #
-    #     image, results = mediapipe_detection(frame, holistic)
-    #     print(results)
-    #
-    #     show_landmarks(image, results)
-    #
-    #     cv2.imshow("Video frame", image)
-    #
-    #     if cv2.waitKey(5) & 0xFF == ord('q'):
-    #         break
 
     for sequence in range(1, no_sequences + 1):
-        # We will store 30 frames worth of landmarks here
         this_sequence_landmarks = []
 
         for frame_num in range(sequence_length):
@@ -112,8 +90,6 @@ with mp_holistic.Holistic(model_complexity=1, min_detection_confidence=0.5, min_
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # --- SAVE THE ARRAY ---
-        # Convert list to numpy array and save
         file_path = action_folder / f"{CURRENT_ACTION}_{sequence}.npy"
         np.save(file_path, np.array(this_sequence_landmarks), allow_pickle=False)
         print(f"Saved {file_path}")
