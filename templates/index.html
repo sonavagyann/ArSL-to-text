@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Armenian Sign Language Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #22242a;
+    --surface:  #4d5156;
+    --surface2: #22242a;
+    --border:   #a6a5a4;
+    --accent:   #c0392b;
+    --accent2:  #2471a3;
+    --text:     #ffffff;
+    --muted:    #c7c3c3;
+    --radius:   16px;
+    --shadow:   0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  :root.light {
+    --bg:       #afaeb8;    /* page background */
+    --surface:  #bebdc7;    /* card background */
+    --surface2: #afaeb8;     /* header background */
+    --border:   #e2e0db;    /* borders */
+    --accent:   #c0392b;    /* Armenian red - used for probability bars */
+    --accent2:  #2471a3;    /* Armenian blue - used for current word, chips */
+    --text:     #1a1a1a;    /* main text */
+    --muted:    #620000;      /* secondary text */
+    --radius:   16px;
+    --shadow:   0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-flag { display: flex; flex-direction: column; width: 28px; height: 20px; border-radius: 4px; overflow: hidden; }
+  .logo-flag span { flex: 1; }
+  .logo-flag span:nth-child(1) { background: #d90012; }
+  .logo-flag span:nth-child(2) { background: #0033a0; }
+  .logo-flag span:nth-child(3) { background: #f2a800; }
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    letter-spacing: -0.3px;
+    color: #ffffff;
+}
+  .logo-text span { color: var(--accent); }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: #edfaf1; color: #1a7a3c;
+    border: 1px solid #b2dfc0; border-radius: 999px;
+    padding: 6px 14px; font-size: 0.8rem; font-weight: 500;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px; background: #27ae60;
+    border-radius: 50%; animation: pulse 1.8s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(.8); }
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  .camera-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow);
+    width: 100%;
+    max-width: none;
+  }
+
+  .camera-header {
+    padding: 15px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .camera-label { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .camera-feed  { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #111; }
+
+  .sentence-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; width: 100%; min-width: 0;}
+  .sentence-header { padding: 15px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  .conf-bar-wrap { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .conf-label    { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+  .conf-track    { flex: 1; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .conf-fill     { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s ease; width: 0%; }
+  .conf-value    { font-size: .78rem; font-weight: 600; min-width: 36px; text-align: right; }
+
+  .clear-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; font-size: .75rem; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all .15s; font-family: inherit;
+  }
+  .clear-btn:hover { background: #fdf2f2; border-color: var(--accent); color: var(--accent); }
+
+<!--  .sentence-body {-->
+<!--    padding: 24px 20px;-->
+<!--    min-height: 80px;-->
+<!--    max-height: 120px;-->
+<!--    display: flex;-->
+<!--    align-items: center;-->
+<!--    gap: 8px;-->
+<!--    overflow-x: auto;-->
+<!--  }-->
+
+  .sentence-body {
+    padding: 16px 20px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .word-chip {
+    font-family: 'Noto Sans Armenian', sans-serif;
+    background: #bebdc7;
+    border: 1px solid #aed6f1;
+    color: #1a1a1a;
+    padding: 2px 6px;
+    font-size: .95rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+
+  @keyframes chipIn {
+    from { opacity:0; transform:translateY(6px) scale(.95); }
+    to   { opacity:1; transform:none; }
+  }
+
+  .sentence-empty { color: var(--muted); font-size: .9rem; font-style: italic; }
+
+  .current-card {
+    background: linear-gradient(135deg,#fdfefe,#ebf5fb);
+    border: 1px solid #aed6f1; border-radius: var(--radius);
+    padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow);
+  }
+
+  .current-icon { width:48px; height:48px; background: var(--accent2); border-radius:12px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.4rem; flex-shrink:0; }
+  .current-sublabel { font-size:.7rem; color:var(--muted); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .current-word { font-family:'DM Serif Display',serif; font-size:1.6rem; color:var(--accent2); margin-top:2px; min-height:38px; }
+
+  .right { display: flex; flex-direction: column; gap: 20px; min-width: 0;}
+
+  .signs-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+  .signs-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .signs-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+  .sign-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:10px; transition:background .15s; gap:10px; }
+  .sign-row:hover { background: var(--bg); }
+  .sign-arm { font-size:.9rem; color:var(--text); font-weight:500; min-width: 120px; flex-shrink: 0;}
+  .sign-lat { font-size:.78rem; color:var(--muted); }
+
+  .sign-prob-wrap { flex:1; max-width:80px; }
+  .sign-prob-track { height:4px; background:var(--border); border-radius:999px; overflow:hidden; }
+  .sign-prob-fill  { height:100%; border-radius:999px; background:var(--accent); transition:width .4s ease; width:0%; }
+  .sign-prob-val   { font-size:.7rem; color:var(--muted); text-align:right; margin-top:2px; }
+
+  .info-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:20px; box-shadow:var(--shadow); }
+  .info-card p { font-size:.82rem; color:var(--muted); line-height:1.6; }
+  .info-card strong { color:var(--text); }
+
+  .signs-list::-webkit-scrollbar { width:4px; }
+  .signs-list::-webkit-scrollbar-track { background:transparent; }
+  .signs-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:999px; }
+
+  @media (max-width:768px) {
+    .main { grid-template-columns:1fr; }
+    header { padding:0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-flag"><span></span><span></span><span></span></div>
+    <div class="logo-text">TR<span>ArSL</span>ATE</div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="toggleTheme()" id="themeBtn" style="
+        background:none; border:1px solid var(--border);
+        border-radius:999px; padding:6px 14px;
+        font-size:0.8rem; font-weight:500;
+        color:#ffffff; cursor:pointer;
+        font-family:inherit; transition:all 0.2s;">
+        Light mode
+    </button>
+    <div class="status-pill">
+        <div class="status-dot"></div>
+        Live Detection
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="left">
+
+    <div class="camera-card">
+      <div class="camera-header">
+        <span class="camera-label">Camera Feed</span>
+      </div>
+      <img class="camera-feed" src="/video_feed" alt="Camera feed"/>
+
+    </div>
+
+    <div class="info-card">
+      <p><strong>How it works:</strong> Show a sign to the camera and hold it steady for a moment. The model analyzes 30 frames at a time before making a prediction. Signs appear in the sentence once confidence exceeds <strong>75%</strong>.</p>
+    </div>
+
+    <!--
+    <div class="current-card">
+      <div class="current-icon">👋</div>
+      <div class="current-meta">
+        <div class="current-sublabel">Currently detecting</div>
+        <div class="current-word" id="currentWord">—</div>
+      </div>
+    </div>
+    -->
+
+  </div>
+
+  <div class="right">
+
+    <div class="sentence-card">
+      <div class="sentence-header">
+        <span class="section-title">Sentence</span>
+        <button class="clear-btn" onclick="clearSentence()">Clear</button>
+      </div>
+      <div class="sentence-body" id="sentenceBody">
+        <span class="sentence-empty">Detected signs will appear here…</span>
+      </div>
+    </div>
+    <div class="signs-card">
+      <div class="signs-header">
+        <span class="section-title">Known Signs</span>
+      </div>
+<!--      <div class="signs-list" id="signsList">-->
+<!--        {% for s in signs %}-->
+<!--        <div class="sign-row" id="row-{{ loop.index0 }}">-->
+<!--          <span class="sign-arm">{{ s.arm }}</span>-->
+<!--          <span class="sign-lat">{{ s.lat }}</span>-->
+<!--          <div class="sign-prob-wrap">-->
+<!--            <div class="sign-prob-track">-->
+<!--              <div class="sign-prob-fill" id="prob-{{ loop.index0 }}"></div>-->
+<!--            </div>-->
+<!--            <div class="sign-prob-val" id="probval-{{ loop.index0 }}">0%</div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--        {% endfor %}-->
+        <div class="signs-list" id="signsList">
+          {% for s in signs %}
+          <div class="sign-row" id="row-{{ loop.index0 }}">
+            <span class="sign-arm" style="min-width:120px; flex-shrink:0;">{{ s.arm }}</span>
+            <span class="sign-lat" style="min-width:80px; flex-shrink:0;">{{ s.lat }}</span>
+            <div class="sign-prob-wrap">
+              <div class="sign-prob-track">
+                <div class="sign-prob-fill" id="prob-{{ loop.index0 }}"></div>
+              </div>
+              <div class="sign-prob-val" id="probval-{{ loop.index0 }}">0%</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+<!--          <div class="sign-row">-->
+<!--            <span class="sign-arm">ես</span>-->
+<!--            <span class="sign-lat">es</span>-->
+<!--            <div class="sign-prob-wrap">-->
+<!--              <div class="sign-prob-track"><div class="sign-prob-fill" style="width:75%"></div></div>-->
+<!--                <div class="sign-prob-val">75%</div>-->
+<!--              </div>-->
+<!--            </div>-->
+
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+<script>
+  async function poll() {
+    try {
+      const r = await fetch('/state');
+      const d = await r.json();
+
+<!--      const body = document.getElementById('sentenceBody');-->
+<!--      if (d.sentence) {-->
+<!--        const words = d.sentence.split(' ').filter(Boolean);-->
+<!--        body.innerHTML = words.map(w => `<span class="word-chip">${w}</span>`).join('');-->
+<!--      } else {-->
+<!--        body.innerHTML = '<span class="sentence-empty">Detected signs will appear here…</span>';-->
+<!--      }-->
+      const body = document.getElementById('sentenceBody');
+      if (d.sentence) {
+<!--          const armWords = d.sentence.split(' ').filter(Boolean);-->
+<!--          const latWords = d.sentence_lat ? d.sentence_lat.split(' ').filter(Boolean) : [];-->
+          const armWords = d.sentence_list;
+          const latWords = d.sentence_lat_list;
+          body.innerHTML = armWords.map((w, i) => `
+              <span class="word-chip">
+                  ${w}
+                  <span style="display:block; font-size:0.7rem; opacity:0.7; font-family:'DM Sans', sans-serif;">${latWords[i] || ''}</span>
+              </span>
+          `).join('');
+      } else {
+          body.innerHTML = '<span class="sentence-empty">Detected signs will appear here…</span>';
+      }
+
+      d.all_probs.forEach(([label, prob], i) => {
+        const fill = document.getElementById('prob-' + i);
+        const val  = document.getElementById('probval-' + i);
+        if (fill) fill.style.width = prob + '%';
+        if (val)  val.textContent  = prob.toFixed(1) + '%';
+      });
+
+    } catch(e) {}
+    setTimeout(poll, 400);
+  }
+
+  async function clearSentence() {
+    await fetch('/clear', { method: 'POST' });
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeBtn');
+    if (root.classList.contains('light')) {
+        root.classList.remove('light');
+        btn.textContent = 'Light mode';
+        btn.style.color = '#ffffff';
+    } else {
+        root.classList.add('light');
+        btn.textContent = 'Dark mode';
+        btn.style.color = '#ffffff';
+    }
+  }
+
+  poll();
+  toggleTheme();
+</script>
+</body>
+</html>
