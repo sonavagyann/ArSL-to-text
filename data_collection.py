@@ -7,10 +7,11 @@ from pathlib import Path
 # 200 samples: ես, դու, իմ, քո, անուն, ազգանուն, ի՞նչ, է, և,
 # ա, ս, ո, ն, ցտեսություն, վ, դ, գ, յ, ր
 # նա, նրա, մենք, սիրել, լսել, ժեստերի լեզու, շնորհակալություն, այո, վատ, լավ
-# next in line: ե, ներողություն, ապրել, հիշել, ու
-#rerecorded:Ցտեսություն, ս, ա
-#next in line: ն, դ, և
-CURRENT_ACTION = 'ա'
+# ու
+# next in line: ու, ե, Հայաստան, որտեղից
+#rerecorded:Ցտեսություն, ս, ա, ո, է, ն
+#next in line: դ, և
+CURRENT_ACTION = 'ու'
 DATA_PATH = Path('DB')
 no_sequences = 200
 sequence_length = 30

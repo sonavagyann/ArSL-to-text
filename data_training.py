@@ -11,13 +11,14 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import TensorBoard
 
-TRAIN_MODEL = True
+TRAIN_MODEL = False
 DATA_PATH = Path('DB')
 
-#                     'Երևան', 'Հայաստան', 'լավ', 'վատ', 'հայերեն', 'մենք', 'սիրել', 'հիշել', 'մոռանալ', 'Ցտեսություն', 'ե՞րբ', 'ինչու՞', 'լսել', 'ժեստերի լեզու'
+#                     'Երևան', 'Հայաստան', 'հիշել', 'մոռանալ'
 actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ',
                     'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'ցտեսություն',
-                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ'])
+                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ',
+                    'ու'])
 no_sequences = 200
 sequence_length = 30
 
@@ -70,23 +71,24 @@ model.add(Dense(actions.shape[0], activation='softmax'))
 
 if TRAIN_MODEL:
     model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-    model.fit(X_train, y_train, epochs=160, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
+    model.fit(X_train, y_train, epochs=180, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
     model.summary()
     model.evaluate(X_test, y_test)
-    model.save('model12.h5')
-    #model12: 160, 256, problems with surname, is, vo, yes, sign lang, we, n, and
+    model.save('model5.h5')
+    #model1: 145, 128, not too bad, but can't recognize I you, my, r, v etc
+    #model2: 145, 256
+    #model3: 160, 128
+    #model4: 160, 256, bad with
+    #model13: 160, 256, (new signs for n, vo, is)
+    #model12: 160, 256, problems with surname, is, vo, yes, sign lang, we, n, and (new signs for a, good bye, s)
     #model11: 160 epochs, 128, name, surname, is,
     #model10: 190 epochs, LSTM 256, bad at անուն, ազգանուն, է
     #model9: okay 190 epochs, LSTM 256, bad at ա, և, լավ, ցտեսություն, ժեստերի լեզու
-    #model8: okayish, epochs 165, LSTM 256, bad at Ս, ա, դ, և, ն
-    #model7: epochs 125, LSTM 128
-    #model5: not bad asem qez
-    #model3: epochs 100, Dropout(0.2)
-    #model2 doesn't recognize n, a, s
+
     #model.save('armenian_sign_model.h5')
 else:
     from tensorflow.keras.models import load_model
-    model = load_model('model9.h5')
+    model = load_model('model4.h5')
     print("Model loaded successfully")
 
 
@@ -175,7 +177,8 @@ latin_map = {
     'շնորհակալություն' : 'thank you',
     'այո' : 'yes',
     'վատ' : 'bad',
-    'լավ' : 'good'
+    'լավ' : 'good',
+    'ու' : 'u'
 }
 
 sequence = []
