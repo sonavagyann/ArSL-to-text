@@ -8,9 +8,10 @@ import time
 
 app = Flask(__name__)
 
-actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն',
-                    'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ', 'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'Ցտեսություն',
-                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ'])
+actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ',
+                    'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'ցտեսություն',
+                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ',
+                    'ու'])
 
 latin_map = {
     'ես': 'I',
@@ -20,8 +21,8 @@ latin_map = {
     'անուն': 'name',
     'ազգանուն': 'surname',
     'ի՞նչ': 'what',
-    'է': 'is',
-    'և': 'and',
+    'է': 'e',
+    'և': 'ev',
     'Բարև Ձեզ': 'Hello',
     'ա': 'a',
     'գ' : 'g',
@@ -32,7 +33,7 @@ latin_map = {
     'ս': 's',
     'վ' : 'v',
     'ր' : 'r',
-    'Ցտեսություն' : 'Good bye',
+    'ցտեսություն' : 'Good bye',
     'նա' : 'he/she',
     'նրա' : 'his/her',
     'մենք' : 'we',
@@ -42,7 +43,8 @@ latin_map = {
     'շնորհակալություն' : 'thank you',
     'այո' : 'yes',
     'վատ' : 'bad',
-    'լավ' : 'good'
+    'լավ' : 'good',
+    'ու' : 'u'
 }
 
 armenian_display_map = {
@@ -68,7 +70,7 @@ verb_conjugations = {
     }
 }
 
-model = load_model('model12.h5')
+model = load_model('model5.h5')#4
 
 mp_holistic = mp.solutions.holistic
 mp_drawing  = mp.solutions.drawing_utils
@@ -110,11 +112,11 @@ state = {
     'prediction_counter': {}
 }
 
-strict_signs = ['սիրել', 'այո', 'ժեստերի լեզու']
+strict_signs = ['սիրել', 'լսել', 'Ողջույն', 'գ']
 
-THRESHOLD = 0.75
+THRESHOLD = 0.7
 COOLDOWN_SECONDS = 5
-STRICT_THRESHOLD = 0.9
+STRICT_THRESHOLD = 0.8
 
 def gen_frames():
     sequence = []
@@ -141,8 +143,8 @@ def gen_frames():
             sequence.append(keypoints)
             sequence[:] = sequence[-30:]
 
-            person_detected = results.pose_landmarks is not None or results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
-            #person_detected = results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
+            #person_detected = results.pose_landmarks is not None or results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
+            person_detected = results.left_hand_landmarks is not None or results.right_hand_landmarks is not None
 
             if not person_detected:
                 state['all_probs'] = [0.0] * len(actions)
