@@ -129,16 +129,6 @@
   }
   .clear-btn:hover { background: #fdf2f2; border-color: var(--accent); color: var(--accent); }
 
-<!--  .sentence-body {-->
-<!--    padding: 24px 20px;-->
-<!--    min-height: 80px;-->
-<!--    max-height: 120px;-->
-<!--    display: flex;-->
-<!--    align-items: center;-->
-<!--    gap: 8px;-->
-<!--    overflow-x: auto;-->
-<!--  }-->
-
   .sentence-body {
     padding: 16px 20px;
     min-height: 60px;
@@ -255,17 +245,6 @@
     <div class="info-card">
       <p><strong>How it works:</strong> Show a sign to the camera and hold it steady for a moment. The model analyzes 30 frames at a time before making a prediction. Signs appear in the sentence once confidence exceeds <strong>75%</strong>.</p>
     </div>
-
-    <!--
-    <div class="current-card">
-      <div class="current-icon">👋</div>
-      <div class="current-meta">
-        <div class="current-sublabel">Currently detecting</div>
-        <div class="current-word" id="currentWord">—</div>
-      </div>
-    </div>
-    -->
-
   </div>
 
   <div class="right">
@@ -283,19 +262,6 @@
       <div class="signs-header">
         <span class="section-title">Known Signs</span>
       </div>
-<!--      <div class="signs-list" id="signsList">-->
-<!--        {% for s in signs %}-->
-<!--        <div class="sign-row" id="row-{{ loop.index0 }}">-->
-<!--          <span class="sign-arm">{{ s.arm }}</span>-->
-<!--          <span class="sign-lat">{{ s.lat }}</span>-->
-<!--          <div class="sign-prob-wrap">-->
-<!--            <div class="sign-prob-track">-->
-<!--              <div class="sign-prob-fill" id="prob-{{ loop.index0 }}"></div>-->
-<!--            </div>-->
-<!--            <div class="sign-prob-val" id="probval-{{ loop.index0 }}">0%</div>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--        {% endfor %}-->
         <div class="signs-list" id="signsList">
           {% for s in signs %}
           <div class="sign-row" id="row-{{ loop.index0 }}">
@@ -311,15 +277,6 @@
           {% endfor %}
         </div>
 
-<!--          <div class="sign-row">-->
-<!--            <span class="sign-arm">ես</span>-->
-<!--            <span class="sign-lat">es</span>-->
-<!--            <div class="sign-prob-wrap">-->
-<!--              <div class="sign-prob-track"><div class="sign-prob-fill" style="width:75%"></div></div>-->
-<!--                <div class="sign-prob-val">75%</div>-->
-<!--              </div>-->
-<!--            </div>-->
-
       </div>
     </div>
 
@@ -333,13 +290,6 @@
       const r = await fetch('/state');
       const d = await r.json();
 
-<!--      const body = document.getElementById('sentenceBody');-->
-<!--      if (d.sentence) {-->
-<!--        const words = d.sentence.split(' ').filter(Boolean);-->
-<!--        body.innerHTML = words.map(w => `<span class="word-chip">${w}</span>`).join('');-->
-<!--      } else {-->
-<!--        body.innerHTML = '<span class="sentence-empty">Detected signs will appear here…</span>';-->
-<!--      }-->
       const body = document.getElementById('sentenceBody');
       if (d.sentence) {
 <!--          const armWords = d.sentence.split(' ').filter(Boolean);-->
@@ -349,7 +299,7 @@
           body.innerHTML = armWords.map((w, i) => `
               <span class="word-chip">
                   ${w}
-                  <span style="display:block; font-size:0.7rem; opacity:0.7; font-family:'DM Sans', sans-serif;">${latWords[i] || ''}</span>
+                  <span style="display:block; font-size:0.8rem; opacity:0.7; font-family:'DM Sans', sans-serif;">${latWords[i] || ''}</span>
               </span>
           `).join('');
       } else {
