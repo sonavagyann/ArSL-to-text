@@ -8,10 +8,11 @@ import time
 
 app = Flask(__name__)
 
-actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ',
+actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'Բարև Ձեզ',
                     'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'ցտեսություն',
-                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ',
-                    'ու'])
+                    'նա', 'նրա', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'վատ', 'լավ', 'ու',
+                    'տխուր', 'ուտել', 'քնել', 'արթնանալ', 'անուշ', 'Հայաստան', 'հաղթել', 'մտածել', 'միշտ',
+                    'Երևան', 'վերջ', 'ուսանող', 'սովորել'])
 
 latin_map = {
     'ես': 'I',
@@ -21,8 +22,7 @@ latin_map = {
     'անուն': 'name',
     'ազգանուն': 'surname',
     'ի՞նչ': 'what',
-    'է': 'e',
-    'և': 'ev',
+    'է': 'is (e)',
     'Բարև Ձեզ': 'Hello',
     'ա': 'a',
     'գ' : 'g',
@@ -36,15 +36,26 @@ latin_map = {
     'ցտեսություն' : 'Good bye',
     'նա' : 'he/she',
     'նրա' : 'his/her',
-    'մենք' : 'we',
     'սիրել' : 'love',
     'լսել' : 'listen',
     'ժեստերի լեզու' : 'sign language',
     'շնորհակալություն' : 'thank you',
-    'այո' : 'yes',
     'վատ' : 'bad',
     'լավ' : 'good',
-    'ու' : 'u'
+    'ու' : 'u',
+    'տխուր' : 'sad',
+    'ուտել' : 'eat',
+    'քնել' : 'sleep',
+    'արթնանալ' : 'wake up',
+    'անուշ' : 'sweet',
+    'Հայաստան' : 'Armenia',
+    'հաղթել' : 'win',
+    'մտածել' : 'think',
+    'միշտ' : 'always',
+    'Երևան' : 'Yerevan',
+    'վերջ' : 'the end',
+    'ուսանող' : 'student',
+    'սովորել' : 'study'
 }
 
 armenian_display_map = {
@@ -67,10 +78,30 @@ verb_conjugations = {
         'դու': 'լսում ես',
         'նա': 'լսում է',
         'մենք': 'լսում ենք'
+    },
+    'ուտել': { #ստեղից
+        'ես': 'ուտում եմ',
+        'դու': 'ուտում ես',
+        'նա': 'ուտում է'
+    },
+    'մտածել': {
+        'ես': 'մտածում եմ',
+        'դու': 'մտածում ես',
+        'նա': 'մտածում է'
+    },
+    'քնել' : {
+        'ես': 'քնում եմ',
+        'դու': 'քնում ես',
+        'նա': 'քնում է'
+    },
+    'սովորել' : {
+        'ես': 'սովորում եմ',
+        'դու': 'սովորում ես',
+        'նա': 'սովորում է'
     }
 }
 
-model = load_model('model5.h5')#4
+model = load_model('model16.h5')#8, 15
 
 mp_holistic = mp.solutions.holistic
 mp_drawing  = mp.solutions.drawing_utils
@@ -112,11 +143,11 @@ state = {
     'prediction_counter': {}
 }
 
-strict_signs = ['սիրել', 'լսել', 'Ողջույն', 'գ']
+strict_signs = ['այո', 'մենք', 'լսել', 'սիրել']
 
-THRESHOLD = 0.7
-COOLDOWN_SECONDS = 5
-STRICT_THRESHOLD = 0.8
+THRESHOLD = 0.8
+COOLDOWN_SECONDS = 3
+STRICT_THRESHOLD = 0.9
 
 def gen_frames():
     sequence = []
@@ -225,6 +256,7 @@ def get_state():
         'confidence': state['confidence'],
         'all_probs': list(zip([armenian_display_map.get(a, a) for a in actions],
                        state['all_probs'])),
+        'all_probs_eng': [latin_map.get(a, a) for a in actions],
     })
 
 def apply_grammar(sentence):
