@@ -3,209 +3,611 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Armenian Sign Language Recognition</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<title>TRArSLATE — Armenian Sign Language Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Syne:wght@400;500;600;700&family=Noto+Sans+Armenian:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg:       #22242a;
-    --surface:  #4d5156;
-    --surface2: #22242a;
-    --border:   #a6a5a4;
-    --accent:   #c0392b;
-    --accent2:  #2471a3;
-    --text:     #ffffff;
-    --muted:    #c7c3c3;
-    --radius:   16px;
-    --shadow:   0 4px 24px rgba(0,0,0,0.08);
-  }
-
-  :root.light {
-    --bg:       #afaeb8;    /* page background */
-    --surface:  #bebdc7;    /* card background */
-    --surface2: #afaeb8;     /* header background */
-    --border:   #e2e0db;    /* borders */
-    --accent:   #c0392b;    /* Armenian red - used for probability bars */
-    --accent2:  #2471a3;    /* Armenian blue - used for current word, chips */
-    --text:     #1a1a1a;    /* main text */
-    --muted:    #620000;      /* secondary text */
-    --radius:   16px;
-    --shadow:   0 4px 24px rgba(0,0,0,0.08);
-  }
-
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-  header {
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    padding: 0 40px;
-    height: 55px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 12px rgba(0,0,0,0.06);
-  }
-
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-flag { display: flex; flex-direction: column; width: 28px; height: 20px; border-radius: 4px; overflow: hidden; }
-  .logo-flag span { flex: 1; }
-  .logo-flag span:nth-child(1) { background: #d90012; }
-  .logo-flag span:nth-child(2) { background: #0033a0; }
-  .logo-flag span:nth-child(3) { background: #f2a800; }
-  .logo-text {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem;
-    letter-spacing: -0.3px;
-    color: #ffffff;
-}
-  .logo-text span { color: var(--accent); }
-
-  .status-pill {
-    display: flex; align-items: center; gap: 8px;
-    background: #edfaf1; color: #1a7a3c;
-    border: 1px solid #b2dfc0; border-radius: 999px;
-    padding: 6px 14px; font-size: 0.8rem; font-weight: 500;
-  }
-
-  .status-dot {
-    width: 8px; height: 8px; background: #27ae60;
-    border-radius: 50%; animation: pulse 1.8s infinite;
-  }
-
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50%      { opacity:.5; transform:scale(.8); }
-  }
-
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 32px 24px;
-  }
-
-  .left {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-  }
-  .camera-card {
-    background: var(--surface); border-radius: var(--radius);
-    border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow);
-    width: 100%;
-    max-width: none;
-  }
-
-  .camera-header {
-    padding: 15px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-
-  .camera-label { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .camera-feed  { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #111; }
-
-  .sentence-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; width: 100%; min-width: 0;}
-  .sentence-header { padding: 15px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .section-title { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-
-  .conf-bar-wrap { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-  .conf-label    { font-size: .78rem; color: var(--muted); white-space: nowrap; }
-  .conf-track    { flex: 1; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
-  .conf-fill     { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s ease; width: 0%; }
-  .conf-value    { font-size: .78rem; font-weight: 600; min-width: 36px; text-align: right; }
-
-  .clear-btn {
-    background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 12px; font-size: .75rem; font-weight: 500; color: var(--muted);
-    cursor: pointer; transition: all .15s; font-family: inherit;
-  }
-  .clear-btn:hover { background: #fdf2f2; border-color: var(--accent); color: var(--accent); }
-
-  .sentence-body {
-    padding: 16px 20px;
-    min-height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .word-chip {
-    font-family: 'Noto Sans Armenian', sans-serif;
-    background: #bebdc7;
-    border: 1px solid #aed6f1;
-    color: #1a1a1a;
-    padding: 2px 6px;
-    font-size: .95rem;
-    font-weight: 500;
-    text-align: center;
-    line-height: 1.4;
-  }
-
-
-  @keyframes chipIn {
-    from { opacity:0; transform:translateY(6px) scale(.95); }
-    to   { opacity:1; transform:none; }
-  }
-
-  .sentence-empty { color: var(--muted); font-size: .9rem; font-style: italic; }
-
-  .current-card {
-    background: linear-gradient(135deg,#fdfefe,#ebf5fb);
-    border: 1px solid #aed6f1; border-radius: var(--radius);
-    padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow);
-  }
-
-  .current-icon { width:48px; height:48px; background: var(--accent2); border-radius:12px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.4rem; flex-shrink:0; }
-  .current-sublabel { font-size:.7rem; color:var(--muted); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
-  .current-word { font-family:'DM Serif Display',serif; font-size:1.6rem; color:var(--accent2); margin-top:2px; min-height:38px; }
-
-  .right { display: flex; flex-direction: column; gap: 20px; min-width: 0;}
-
-  .signs-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
-  .signs-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
-  .signs-list {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 400px;
-    overflow-y: auto;
+:root {
+  --bg:         #020a14;
+  --bg2:        #040f1e;
+  --header:     rgba(2,10,20,0.85);
+  --surface:    #071828;
+  --surface2:   #0a2236;
+  --border:     rgba(0,180,255,0.15);
+  --border2:    rgba(0,180,255,0.3);
+  --accent:     #ffb400;
+  --accent2:    #ff6b2b;
+  --accent3:    #ff3b3b;
+  --glow:       rgba(0,180,255,0.25);
+  --glow2:      rgba(0,180,255,0.08);
+  --text:       #e8f4ff;
+  --text2:      #7ab3cc;
+  --muted:      #3a6a8a;
+  --radius:     12px;
+  --font-body:    'Syne', sans-serif;
+  --font-arm:     'Noto Sans Armenian', sans-serif;
 }
 
-  .sign-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:10px; transition:background .15s; gap:10px; }
-  .sign-row:hover { background: var(--bg); }
-  .sign-arm { font-size:.9rem; color:var(--text); font-weight:500; min-width: 120px; flex-shrink: 0;}
-  .sign-lat { font-size:.78rem; color:var(--muted); }
+:root.light {
+  --bg:         #0a1628;
+  --bg2:        #0d1e35;
+  --header:     #0a1628;
+  --surface:    #1a2a4a;
+  --surface2:   #162240;
+  --border:     rgba(100,180,255,0.2);
+  --border2:    rgba(100,180,255,0.4);
+  --accent:     #60c8ff;
+  --accent2:    #8090b8;
+  --accent3:    #6070a8;
+  --glow:       rgba(100,180,255,0.25);
+  --glow2:      rgba(100,180,255,0.1);
+  --text:       #e8eaf0;
+  --text2:      #9098b8;
+  --muted:      #505870;
+}
 
-  .sign-prob-wrap { flex:1; max-width:80px; }
-  .sign-prob-track { height:4px; background:var(--border); border-radius:999px; overflow:hidden; }
-  .sign-prob-fill  { height:100%; border-radius:999px; background:var(--accent); transition:width .4s ease; width:0%; }
-  .sign-prob-val   { font-size:.7rem; color:var(--muted); text-align:right; margin-top:2px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.4s, color 0.4s;
+}
 
-  .info-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:20px; box-shadow:var(--shadow); }
-  .info-card p { font-size:.82rem; color:var(--muted); line-height:1.6; }
-  .info-card strong { color:var(--text); }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s;
+}
 
-  .signs-list::-webkit-scrollbar { width:4px; }
-  .signs-list::-webkit-scrollbar-track { background:transparent; }
-  .signs-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:999px; }
+:root.light body::before { opacity: 0.4; }
 
-  @media (max-width:768px) {
-    .main { grid-template-columns:1fr; }
-    header { padding:0 16px; }
-  }
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--header);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border2);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.4s;
+}
+
+:root.light header {
+  background: var(--header);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-flag {
+  display: flex;
+  flex-direction: column;
+  width: 24px;
+  height: 18px;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+
+.logo-flag span { flex: 1; }
+.logo-flag span:nth-child(1) { background: #d90012; }
+.logo-flag span:nth-child(2) { background: #0033a0; }
+.logo-flag span:nth-child(3) { background: #f2a800; }
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text);
+}
+
+.logo-text span {
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0,180,255,0.08);
+  color: var(--accent);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  width: 100px;
+  height: 27px;
+  padding: 5px 14px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  font-family: var(--font-display);
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); box-shadow: 0 0 8px var(--accent); }
+  50%      { opacity:0.5; transform:scale(0.8); box-shadow: 0 0 4px var(--accent); }
+}
+
+.theme-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.theme-switch-label {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--text2);
+  text-transform: uppercase;
+  transition: color 0.3s;
+  user-select: none;
+}
+
+.theme-switch-track {
+  position: relative;
+  width: 100px;
+  height: 27px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.theme-switch-track:hover {
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.theme-switch-thumb {
+  position: absolute;
+  top: 4px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, box-shadow 0.3s;
+}
+
+:root.light .theme-switch-thumb {
+  transform: translateX(78px);
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+:root.light .theme-switch-track {
+  background: var(--surface2);
+  border-color: var(--border2);
+}
+
+.lang-select {
+  background: var(--surface2);
+  color: var(--text2);
+  width: 100px;
+  text-align: center;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.lang-select:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--glow); }
+
+.info-wrap { position: relative; }
+
+.info-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.info-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--glow); }
+
+.info-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 0.8rem;
+  color: var(--text2);
+  line-height: 1.7;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px var(--border);
+  z-index: 999;
+}
+
+.info-tooltip strong { color: var(--accent); }
+.info-wrap:hover .info-tooltip { display: block; }
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.4s;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--glow2) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card:hover {
+  border-color: var(--border2);
+  box-shadow: 0 0 30px var(--glow2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0,0,0,0.1);
+}
+
+.card-label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.camera-card { grid-column: 1; grid-row: 1 / 3; }
+
+.camera-feed {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: #000;
+}
+
+.camera-overlay {
+  position: relative;
+}
+
+.conf-section {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.1);
+}
+
+.conf-label {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.conf-track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.conf-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  box-shadow: 0 0 8px var(--accent);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.conf-value {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 38px;
+  text-align: right;
+}
+
+.sentence-card { grid-column: 2; grid-row: 1; }
+
+.sentence-body {
+  padding: 20px;
+  min-height: 100px;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+.sentence-body::-webkit-scrollbar { height: 3px; }
+.sentence-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
+
+.word-chip {
+  font-family: var(--font-arm);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.5;
+  box-shadow: 0 0 12px var(--glow2);
+  white-space: nowrap;
+}
+
+:root.light .word-chip {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+@keyframes chipIn {
+  from { opacity:0; transform: translateY(8px) scale(0.95); }
+  to   { opacity:1; transform: none; }
+}
+
+.word-chip-eng {
+  display: block;
+  font-size: 0.6rem;
+  opacity: 0.6;
+  font-family: var(--font-body);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+
+.sentence-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.clear-btn {
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 6px 16px;
+  color: var(--text2);
+  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  overflow: hidden;
+  position: relative;
+  height: 32px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.clear-btn:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 12px rgba(255,59,59,0.3);
+  color: var(--accent2);
+}
+
+.btn-text-top {
+  display: block;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.btn-text-bottom {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 100%;
+  text-align: center;
+  transition: top 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.clear-btn:hover .btn-text-top { transform: translateY(-32px); }
+.clear-btn:hover .btn-text-bottom { top: 8px; }
+
+.signs-card { grid-column: 2; grid-row: 2; }
+
+.signs-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+.signs-list::-webkit-scrollbar { width: 3px; }
+.signs-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
+
+.sign-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.sign-row:hover { background: var(--surface2); }
+
+.sign-arm {
+  font-family: var(--font-arm);
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.sign-lat {
+  font-size: 0.72rem;
+  color: var(--muted);
+  min-width: 70px;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+
+.sign-prob-wrap { flex: 1; }
+
+.sign-prob-track {
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.sign-prob-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  transition: width 1.2s ease;
+  width: 0%;
+}
+
+.sign-prob-val {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  color: var(--text2);
+  text-align: right;
+  margin-top: 3px;
+}
+
+.corner-tl, .corner-tr, .corner-bl, .corner-br {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent);
+  border-style: solid;
+  opacity: 0.6;
+  z-index: 2;
+}
+
+.corner-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.corner-tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.corner-bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.corner-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+.card { animation: fadeUp 0.5s ease both; }
+.camera-card { animation-delay: 0.1s; }
+.sentence-card { animation-delay: 0.2s; }
+.signs-card { animation-delay: 0.3s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+header { animation: fadeDown 0.4s ease both; }
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .camera-card { grid-column: 1; grid-row: 1; }
+  .sentence-card { grid-column: 1; grid-row: 2; }
+  .signs-card { grid-column: 1; grid-row: 3; }
+  header { padding: 0 16px; }
+  .header-right { gap: 8px; }
+}
 </style>
 </head>
 <body>
@@ -215,128 +617,182 @@
     <div class="logo-flag"><span></span><span></span><span></span></div>
     <div class="logo-text">TR<span>ArSL</span>ATE</div>
   </div>
-  <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="toggleTheme()" id="themeBtn" style="
-        background:none; border:1px solid var(--border);
-        border-radius:999px; padding:6px 14px;
-        font-size:0.8rem; font-weight:500;
-        color:#ffffff; cursor:pointer;
-        font-family:inherit; transition:all 0.2s;">
-        Light mode
-    </button>
+  <div class="header-right">
+    <select class="lang-select" onchange="setLang(this.value)">
+      <option value="en" style="text-align: center;">Eng</option>
+      <option value="hy" style="text-align: center;">Հայ</option>
+    </select>
+    <div class="info-wrap">
+      <button class="info-btn" id="txt-how-btn">How it works</button>
+      <div class="info-tooltip">
+        <p id="txt-info">Show a sign to the camera and hold it steady. The model analyzes <strong>30 frames</strong> at a time before predicting. Signs appear in the sentence once confidence exceeds <strong>80%</strong>.</p>
+      </div>
+    </div>
+    <div class="theme-switch" onclick="toggleTheme()">
+      <span class="theme-switch-label" id="themeLabelLeft"></span>
+      <div class="theme-switch-track">
+        <div class="theme-switch-thumb"></div>
+      </div>
+      <span class="theme-switch-label" id="themeLabelRight"></span>
+    </div>
     <div class="status-pill">
-        <div class="status-dot"></div>
-        Live Detection
+      <div class="status-dot"></div>
+      <span id="txt-live">Live</span>
     </div>
   </div>
 </header>
 
 <div class="main">
-  <div class="left">
-
-    <div class="camera-card">
-      <div class="camera-header">
-        <span class="camera-label">Camera Feed</span>
-      </div>
-      <img class="camera-feed" src="/video_feed" alt="Camera feed"/>
-
+  <div class="card camera-card">
+    <div class="corner-tl"></div><div class="corner-tr"></div>
+    <div class="corner-bl"></div><div class="corner-br"></div>
+    <div class="card-header">
+      <span class="card-label" id="txt-camera">Camera Feed</span>
     </div>
-
-    <div class="info-card">
-      <p><strong>How it works:</strong> Show a sign to the camera and hold it steady for a moment. The model analyzes 30 frames at a time before making a prediction. Signs appear in the sentence once confidence exceeds <strong>75%</strong>.</p>
+    <div class="camera-overlay">
+      <img class="camera-feed" src="/video_feed" alt="Camera"/>
     </div>
   </div>
-
-  <div class="right">
-
-    <div class="sentence-card">
-      <div class="sentence-header">
-        <span class="section-title">Sentence</span>
-        <button class="clear-btn" onclick="clearSentence()">Clear</button>
-      </div>
-      <div class="sentence-body" id="sentenceBody">
-        <span class="sentence-empty">Detected signs will appear here…</span>
-      </div>
+  <div class="card sentence-card">
+    <div class="corner-tl"></div><div class="corner-tr"></div>
+    <div class="corner-bl"></div><div class="corner-br"></div>
+    <div class="card-header">
+      <span class="card-label" id="txt-sentence">Sentence</span>
+      <button class="clear-btn" onclick="clearSentence()">
+        <span class="btn-text-top" id="txt-clear-top">Clear</span>
+        <span class="btn-text-bottom" id="txt-clear-bottom">Clear</span>
+      </button>
     </div>
-    <div class="signs-card">
-      <div class="signs-header">
-        <span class="section-title">Known Signs</span>
-      </div>
-        <div class="signs-list" id="signsList">
-          {% for s in signs %}
-          <div class="sign-row" id="row-{{ loop.index0 }}">
-            <span class="sign-arm" style="min-width:120px; flex-shrink:0;">{{ s.arm }}</span>
-            <span class="sign-lat" style="min-width:80px; flex-shrink:0;">{{ s.lat }}</span>
-            <div class="sign-prob-wrap">
-              <div class="sign-prob-track">
-                <div class="sign-prob-fill" id="prob-{{ loop.index0 }}"></div>
-              </div>
-              <div class="sign-prob-val" id="probval-{{ loop.index0 }}">0%</div>
-            </div>
+    <div class="sentence-body" id="sentenceBody">
+      <span class="sentence-empty" id="txt-empty">Detected signs will appear here…</span>
+    </div>
+  </div>
+  <div class="card signs-card">
+    <div class="corner-tl"></div><div class="corner-tr"></div>
+    <div class="corner-bl"></div><div class="corner-br"></div>
+    <div class="card-header">
+      <span class="card-label" id="txt-known">Known Signs</span>
+    </div>
+    <div class="signs-list" id="signsList">
+      {% for s in signs %}
+      <div class="sign-row" id="row-{{ loop.index0 }}" {% if s.url %}onclick="window.open('{{ s.url }}', '_blank')"{% endif %}>
+        <span class="sign-arm">{{ s.arm }}</span>
+        <span class="sign-lat">{{ s.lat }}</span>
+        <div class="sign-prob-wrap">
+          <div class="sign-prob-track">
+            <div class="sign-prob-fill" id="prob-{{ loop.index0 }}"></div>
           </div>
-          {% endfor %}
+          <div class="sign-prob-val" id="probval-{{ loop.index0 }}">0.0%</div>
         </div>
-
       </div>
+      {% endfor %}
     </div>
-
-
   </div>
+
 </div>
 
 <script>
-  async function poll() {
-    try {
-      const r = await fetch('/state');
-      const d = await r.json();
 
-      const body = document.getElementById('sentenceBody');
-      if (d.sentence) {
-<!--          const armWords = d.sentence.split(' ').filter(Boolean);-->
-<!--          const latWords = d.sentence_lat ? d.sentence_lat.split(' ').filter(Boolean) : [];-->
-          const armWords = d.sentence_list;
-          const latWords = d.sentence_lat_list;
-          body.innerHTML = armWords.map((w, i) => `
-              <span class="word-chip">
-                  ${w}
-                  <span style="display:block; font-size:0.8rem; opacity:0.7; font-family:'DM Sans', sans-serif;">${latWords[i] || ''}</span>
-              </span>
-          `).join('');
-      } else {
-          body.innerHTML = '<span class="sentence-empty">Detected signs will appear here…</span>';
-      }
-
-      d.all_probs.forEach(([label, prob], i) => {
-        const fill = document.getElementById('prob-' + i);
-        const val  = document.getElementById('probval-' + i);
-        if (fill) fill.style.width = prob + '%';
-        if (val)  val.textContent  = prob.toFixed(1) + '%';
-      });
-
-    } catch(e) {}
-    setTimeout(poll, 400);
+const translations = {
+  en: {
+    'txt-camera':   'Camera Feed',
+    'txt-sentence': 'Sentence',
+    'txt-known':    'Known Signs',
+    'txt-live':     'Live',
+    'txt-how-btn':  'How it works',
+    'txt-info':  'Show a sign to the camera and hold it steady. The model analyzes <strong>30 frames</strong> at a time before predicting. Signs appear in the sentence once confidence exceeds <strong>80%</strong>.',
+    'txt-clear-top': 'Clear',
+    'txt-clear-bottom': 'Clear',
+    'txt-empty':    'Detected signs will appear here…',
+  },
+  hy: {
+    'txt-camera':   'Տեսախցիկ',
+    'txt-sentence': 'Նախադասություն',
+    'txt-known':    'Ժեստերի ցուցակ',
+    'txt-live':     'Ուղիղ',
+    'txt-how-btn':  'Ինչպես է աշխատում',
+    'txt-info': 'Ցույց տվեք ժեստն ու մի քանի վայրկյան պահեք այն. Նախքան ժեստը գուշակելը, մոդելը վերլուծում է <strong>30 կադր</strong>. Երբ ժեստի վստահությունն անցնում է <strong>80%</strong>-ը, ժեստի անվանումը գրվում է «Նախադասություն» բաժնում:',
+    'txt-clear-top': 'Մաքրել',
+    'txt-clear-bottom': 'Մաքրել',
+    'txt-empty':    'Ցույց տրվող նշանները կհայտնվեն այստեղ…',
   }
+};
 
-  async function clearSentence() {
-    await fetch('/clear', { method: 'POST' });
-  }
 
-  function toggleTheme() {
-    const root = document.documentElement;
-    const btn = document.getElementById('themeBtn');
-    if (root.classList.contains('light')) {
-        root.classList.remove('light');
-        btn.textContent = 'Light mode';
-        btn.style.color = '#ffffff';
-    } else {
-        root.classList.add('light');
-        btn.textContent = 'Dark mode';
-        btn.style.color = '#ffffff';
+let currentLang = 'en';
+function setLang(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    for (const [id, text] of Object.entries(t)) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id === 'txt-info') {
+                el.innerHTML = text;
+            } else {
+                el.textContent = text;
+            }
+        }
     }
-  }
+}
 
-  poll();
-  toggleTheme();
+function toggleTheme() {
+  const root = document.documentElement;
+  if (root.classList.contains('light')) {
+    root.classList.remove('light');
+  } else {
+    root.classList.add('light');
+  }
+}
+
+async function poll() {
+  try {
+    const r = await fetch('/state');
+    const d = await r.json();
+
+<!--    document.getElementById('confFill').style.width = d.confidence + '%';-->
+<!--    document.getElementById('confVal').textContent  = d.confidence + '%';-->
+
+    const body = document.getElementById('sentenceBody');
+    if (d.sentence_list && d.sentence_list.length > 0) {
+      const armWords = d.sentence_list;
+      const latWords = d.sentence_lat_list || [];
+      body.innerHTML = armWords.map((w, i) => `
+        <span class="word-chip">
+          ${w}
+          <span class="word-chip-eng">${latWords[i] || ''}</span>
+        </span>
+      `).join('');
+    } else {
+      const emptyText = translations[currentLang]['txt-empty'];
+      body.innerHTML = `<span class="sentence-empty">${emptyText}</span>`;
+    }
+
+    const signsList = document.getElementById('signsList');
+    signsList.innerHTML = d.all_probs.map(([label, prob], i) => {
+      const engLabel = d.all_probs_eng ? d.all_probs_eng[i] : '';
+      return `
+        <div class="sign-row">
+          <span class="sign-arm">${label}</span>
+          <span class="sign-lat">${engLabel}</span>
+          <div class="sign-prob-wrap">
+            <div class="sign-prob-track">
+              <div class="sign-prob-fill" style="width:${prob}%"></div>
+            </div>
+            <div class="sign-prob-val">${prob.toFixed(1)}%</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch(e) {}
+  setTimeout(poll, 400);
+}
+
+async function clearSentence() {
+  await fetch('/clear', { method: 'POST' });
+}
+
+poll();
 </script>
 </body>
 </html>
