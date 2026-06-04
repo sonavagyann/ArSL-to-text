@@ -4,14 +4,7 @@ import mediapipe as mp
 from matplotlib import pyplot as plt
 from pathlib import Path
 
-# 200 samples: ես, դու, իմ, քո, անուն, ազգանուն, ի՞նչ, է, և,
-# ա, ս, ո, ն, ցտեսություն, վ, դ, գ, յ, ր
-# նա, նրա, մենք, սիրել, լսել, ժեստերի լեզու, շնորհակալություն, այո, վատ, լավ
-# ու
-# next in line: ու, ե, Հայաստան, որտեղից
-#rerecorded:Ցտեսություն, ս, ա, ո, է, ն
-#next in line: դ, և
-CURRENT_ACTION = 'ու'
+CURRENT_ACTION = 'Երևան'
 DATA_PATH = Path('DB')
 no_sequences = 200
 sequence_length = 30
