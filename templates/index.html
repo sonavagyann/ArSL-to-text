@@ -429,6 +429,13 @@ header {
   line-height: 1.5;
   box-shadow: 0 0 12px var(--glow2);
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.word-chip:hover {
+    border-color: var(--accent2);
+    box-shadow: 0 0 12px rgba(255,59,59,0.3);
+    opacity: 0.8;
 }
 
 @keyframes chipIn {
@@ -620,7 +627,7 @@ header { animation: fadeDown 0.4s ease both; }
     <div class="info-wrap">
       <button class="info-btn" id="txt-how-btn">How it works</button>
       <div class="info-tooltip">
-        <p id="txt-info">Show a sign to the camera and hold it steady. The model analyzes <strong>30 frames</strong> at a time before predicting. Signs appear in the sentence once confidence exceeds <strong>80%</strong>.</p>
+        <p id="txt-info">Show a sign to the camera and hold it steady. The model analyzes <strong>30 frames</strong> at a time before predicting. Signs appear in the sentence once confidence exceeds <strong>75%</strong>.</p>
       </div>
     </div>
     <div class="theme-switch" onclick="toggleTheme()">
@@ -744,17 +751,14 @@ async function poll() {
     const r = await fetch('/state');
     const d = await r.json();
 
-<!--    document.getElementById('confFill').style.width = d.confidence + '%';-->
-<!--    document.getElementById('confVal').textContent  = d.confidence + '%';-->
-
     const body = document.getElementById('sentenceBody');
     if (d.sentence_list && d.sentence_list.length > 0) {
       const armWords = d.sentence_list;
       const latWords = d.sentence_lat_list || [];
       body.innerHTML = armWords.map((w, i) => `
-        <span class="word-chip">
-          ${w}
-          <span class="word-chip-eng">${latWords[i] || ''}</span>
+        <span class="word-chip" onclick="removeWord(${i})" title="Click to remove">
+            ${w}
+            <span class="word-chip-eng">${latWords[i] || ''}</span>
         </span>
       `).join('');
     } else {
@@ -785,6 +789,10 @@ async function poll() {
 
 async function clearSentence() {
   await fetch('/clear', { method: 'POST' });
+}
+
+async function removeWord(index) {
+    await fetch(`/remove/${index}`, { method: 'POST' });
 }
 
 poll();
