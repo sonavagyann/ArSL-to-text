@@ -14,11 +14,10 @@ from tensorflow.keras.callbacks import TensorBoard
 TRAIN_MODEL = False
 DATA_PATH = Path('DB')
 
-#                     'Երևան', 'Հայաստան', 'հիշել', 'մոռանալ'
-actions = np.array(['ես', 'դու', 'իմ', 'քո', 'անուն', 'ազգանուն', 'ի՞նչ', 'է', 'և', 'Բարև Ձեզ',
-                    'ա', 'գ', 'դ', 'յ', 'ն', 'ո', 'ս', 'վ', 'ր', 'ցտեսություն',
-                    'նա', 'նրա', 'մենք', 'սիրել', 'լսել', 'ժեստերի լեզու', 'շնորհակալություն', 'այո', 'վատ', 'լավ',
-                    'ու'])
+actions = np.array(['ա', 'ազգանուն', 'անուն', 'Բարև Ձեզ', 'դու', 'ես', 'երեկո', 'Երևան', 'իմ', 'ի՞նչ',
+                    'լավ', 'լսել', 'Հայաստան', 'հաղթել', 'մաթեմատիկա', 'միշտ', 'ն', 'նա', 'շնորհակալություն',  'ո',
+                    'ս', 'սովորել', 'սիրել', 'վատ', 'տխուր', 'ցտեսություն', 'ուսանող', 'ուտել', 'քո', 'քնել'])#-է, մտածել, անուշ, խնդրել
+
 no_sequences = 200
 sequence_length = 30
 
@@ -29,9 +28,23 @@ sequences, labels = [], []
 print("Data retrieval started")
 
 for action in actions:
-    action_path = DATA_PATH / action
+    if action == 'իմ':
+        new_action = 'իմ2'
+        action_path = DATA_PATH / new_action
+    elif action == 'Հայաստան':
+        new_action = 'Հայաստան3'
+        action_path = DATA_PATH / new_action
+    elif action == 'միշտ':
+        new_action = 'միշտ2'
+        action_path = DATA_PATH / new_action
+    elif action == 'լսել':
+        new_action = 'լսել2'
+        action_path = DATA_PATH / new_action
+    else:
+        action_path = DATA_PATH / action
+        new_action = action
     for sequence_num in range(1, no_sequences + 1):
-        frame_path = action_path / f"{action}_{sequence_num}.npy"
+        frame_path = action_path / f"{new_action}_{sequence_num}.npy"
         #to print the loaded files
         #print(frame_path)
         res = np.load(str(frame_path), allow_pickle=False)
@@ -71,24 +84,13 @@ model.add(Dense(actions.shape[0], activation='softmax'))
 
 if TRAIN_MODEL:
     model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-    model.fit(X_train, y_train, epochs=180, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
+    model.fit(X_train, y_train, epochs=200, callbacks=[tb_callback], validation_data=(X_test, y_test))#epochs were 140
     model.summary()
     model.evaluate(X_test, y_test)
-    model.save('model5.h5')
-    #model1: 145, 128, not too bad, but can't recognize I you, my, r, v etc
-    #model2: 145, 256
-    #model3: 160, 128
-    #model4: 160, 256, bad with
-    #model13: 160, 256, (new signs for n, vo, is)
-    #model12: 160, 256, problems with surname, is, vo, yes, sign lang, we, n, and (new signs for a, good bye, s)
-    #model11: 160 epochs, 128, name, surname, is,
-    #model10: 190 epochs, LSTM 256, bad at անուն, ազգանուն, է
-    #model9: okay 190 epochs, LSTM 256, bad at ա, և, լավ, ցտեսություն, ժեստերի լեզու
-
-    #model.save('armenian_sign_model.h5')
+    model.save('model21.h5')
 else:
     from tensorflow.keras.models import load_model
-    model = load_model('model4.h5')
+    model = load_model('model21.h5')
     print("Model loaded successfully")
 
 
@@ -148,37 +150,36 @@ def collect_landmarks(results):
     return np.concatenate([pose, lh, rh])
 
 latin_map = {
-    'ես': 'I',
-    'դու': 'you',
-    'իմ': 'my',
-    'քո': 'your',
-    'անուն': 'name',
-    'ազգանուն': 'surname',
-    'ի՞նչ': 'what',
-    'է': 'is (e)',
-    'և': 'and (ev)',
-    'Բարև Ձեզ': 'Hello',
-    'ա': 'a',
-    'գ' : 'g',
-    'դ' : 'd',
-    'յ' : 'y',
-    'ն': 'n',
-    'ո': 'vo',
-    'ս': 's',
-    'վ' : 'v',
-    'ր' : 'r',
-    'ցտեսություն' : 'Good bye',
-    'նա' : 'he/she',
-    'նրա' : 'his/her',
-    'մենք' : 'we',
-    'սիրել' : 'love',
-    'լսել' : 'listen',
-    'ժեստերի լեզու' : 'sign language',
-    'շնորհակալություն' : 'thank you',
-    'այո' : 'yes',
-    'վատ' : 'bad',
+    'ա' : 'a',
+    'ազգանուն' : 'surname',
+    'անուն' : 'name',
+    'Բարև Ձեզ' : 'Hello',
+    'դու' : 'you',
+    'ես' : 'I',
+    'երեկո' : 'evening',
+    'Երևան' : 'Yerevan',
+    'իմ' : 'my',
+    'ի՞նչ' : 'what',
     'լավ' : 'good',
-    'ու' : 'u'
+    'լսել' : 'to listen',
+    'Հայաստան' : 'Armenia',
+    'հաղթել' : 'to win',
+    'մաթեմատիկա' : 'mathematics',
+    'միշտ' : 'always',
+    'ն' : 'n',
+    'նա' : 'he/she',
+    'շնորհակալություն' : 'thank you',
+    'ո' : 'vo',
+    'ս' : 's',
+    'սովորել' : 'to study',
+    'սիրել' : 'to love',
+    'վատ' : 'bad',
+    'տխուր' : 'sad',
+    'ցտեսություն' : 'good bye',
+    'ուսանող' : 'student',
+    'ուտել' : 'to eat',
+    'քո' : 'your',
+    'քնել' : 'to sleep'
 }
 
 sequence = []
