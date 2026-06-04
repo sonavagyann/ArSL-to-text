@@ -208,7 +208,6 @@ with mp_holistic.Holistic(model_complexity=1, min_detection_confidence=0.5, min_
         show_landmarks(image, results)
 
         keypoints = collect_landmarks(results)
-        #print(keypoints.shape, keypoints.sum())
         sequence.append(keypoints)
         sequence = sequence[-30:]
 
